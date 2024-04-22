@@ -1,38 +1,41 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import matplotlib.pyplot as plt
 
-# Load the data
-csv_file_path = '/path_to_your_file/2023-2024 NBA Player Stats_exported.csv'
+# Assuming you've added TmPoss, OppPoss, and OppPts to your dataset
+csv_file_path = '2023-2024 NBA Player Stats_exported.csv'
 df = pd.read_csv(csv_file_path)
 
-# Extract a list of unique teams from the DataFrame
-teams = df['Tm'].unique().tolist()
-teams.sort()  # Sort teams alphabetically
+# Calculate Offensive and Defensive Ratings
+df['OR'] = 100 * df['PTS'] / (df['TmPoss'] + df['OppPoss'])
+df['DR'] = 100 * df['OppPts'] / (df['TmPoss'] + df['OppPoss'])
+
+# Aggregate to team level for visualization
+team_ratings = df.groupby('Tm').agg({
+    'OR': 'mean',  # Using mean here, but you might choose max, min, or another method
+    'DR': 'mean',
+}).reset_index()
 
 # Dropdown for team selection
+teams = team_ratings['Tm'].unique().tolist()
 selected_teams = st.multiselect('Select teams to compare:', teams)
 
-# Dropdown for metric selection
-metrics = ['Offensive Rating', 'Defensive Rating']
-selected_metric = st.selectbox('Select metric to compare:', metrics)
+# Filter for selected teams
+selected_team_ratings = team_ratings[team_ratings['Tm'].isin(selected_teams)]
 
-# Filter the DataFrame based on the selected teams
-filtered_df = df[df['Tm'].isin(selected_teams)]
+# Plotting
+fig, ax = plt.subplots(figsize=(10, 6))
+width = 0.35  # Width of the bars
+indices = range(len(selected_team_ratings))  # Team indices
 
-if selected_metric == 'Offensive Rating':
-    # For simplicity, using 'PTS' as offensive rating
-    metric_df = filtered_df.groupby('Tm')['PTS'].sum().reset_index()
-    metric_label = 'Total Points'
-elif selected_metric == 'Defensive Rating':
-    # For simplicity, using 'STL' + 'BLK' as defensive rating
-    # Adjust this calculation based on your defensive metric
-    metric_df = filtered_df.groupby('Tm').apply(lambda x: (x['STL'] + x['BLK']).sum()).reset_index(name='Def_Rating')
-    metric_df.columns = ['Tm', 'Def_Rating']  # Rename columns for clarity
-    metric_label = 'Defensive Rating'
+ax.bar(indices, selected_team_ratings['OR'], width, label='Offensive Rating')
+ax.bar([i + width for i in indices], selected_team_ratings['DR'], width, label='Defensive Rating')
 
-# Plotting with Plotly
-fig = px.bar(metric_df, x='Tm', y=metric_df.columns[1], 
-             labels={'x': 'Teams', 'y': metric_label},
-             title=f'Comparison of {selected_metric} by Selected Teams')
-st.plotly_chart(fig)
+ax.set_xlabel('Teams')
+ax.set_ylabel('Rating')
+ax.set_title('Team Offensive and Defensive Ratings')
+ax.set_xticks([i + width / 2 for i in indices])
+ax.set_xticklabels(selected_team_ratings['Tm'])
+ax.legend()
+
+st.pyplot(fig)
