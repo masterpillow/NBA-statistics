@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 
 # Load the data
-csv_file_path = '/Users/maxmusial/Downloads/2023-2024 NBA Player Stats_exported.csv'
+csv_file_path = '/path_to_your_file/2023-2024 NBA Player Stats_exported.csv'
 df = pd.read_csv(csv_file_path)
 
 # Extract a list of unique teams from the DataFrame
@@ -31,12 +31,8 @@ elif selected_metric == 'Defensive Rating':
     metric_df.columns = ['Tm', 'Def_Rating']  # Rename columns for clarity
     metric_label = 'Defensive Rating'
 
-# Plotting
-fig, ax = plt.subplots()
-ax.bar(metric_df['Tm'], metric_df.iloc[:, 1], label=selected_metric)  # Use .iloc[:, 1] to get the metric column
-ax.set_xlabel('Teams')
-ax.set_ylabel(metric_label)
-ax.set_title(f'Comparison of {selected_metric} by Selected Teams')
-ax.legend()
-
-st.pyplot(fig)
+# Plotting with Plotly
+fig = px.bar(metric_df, x='Tm', y=metric_df.columns[1], 
+             labels={'x': 'Teams', 'y': metric_label},
+             title=f'Comparison of {selected_metric} by Selected Teams')
+st.plotly_chart(fig)
