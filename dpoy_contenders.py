@@ -10,7 +10,10 @@ def load_data():
 
 def main():
     st.title('NBA Defensive Player of the Year (DPOY) Contenders')
-    df = load_data()
+    data = load_data()
+    
+    # Clone the DataFrame to avoid modifying cached data
+    df = data.copy()
     
     # Calculate a defensive score perhaps as a simple sum of key defensive stats
     df['Defensive Score'] = df['BLK'] + df['STL'] + df['DRB'] + 0.5 * df['TRB']
